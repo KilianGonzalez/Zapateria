@@ -16,16 +16,29 @@ $controllerFile = 'controllers/' . $controllerName . '.php';
 
 // Verificar que existe el controlador
 if (file_exists($controllerFile)) {
-    require_once $controllerFile;
-    $controller = new $controllerName();
+    // Cargar Database primero
+    require_once 'controllers/Database.php';
     
-    // Verificar que existe el método
-    if (method_exists($controller, $method)) {
-        call_user_func_array([$controller, $method], $params);
+    // Cargar el controlador
+    require_once $controllerFile;
+    
+    // Verificar que la clase existe
+    if (class_exists($controllerName)) {
+        $controller = new $controllerName();
+        
+        // Verificar que existe el método
+        if (method_exists($controller, $method)) {
+            call_user_func_array([$controller, $method], $params);
+        } else {
+            http_response_code(404);
+            die("Método no encontrado: " . $method);
+        }
     } else {
-        die("Método no encontrado: " . $method);
+        http_response_code(404);
+        die("Clase no encontrada: " . $controllerName);
     }
 } else {
-    die("Controlador no encontrado: " . $controllerName);
+    http_response_code(404);
+    die("Controlador no encontrado: " . $controllerName . " (Buscando en: " . $controllerFile . ")");
 }
 ?>

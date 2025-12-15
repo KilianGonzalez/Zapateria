@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $titulo ?? 'Zapatería Online'; ?></title>
-    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/zapateria/assets/css/styles.css">
 </head>
 <body>
     <header>
         <div class="container">
             <div class="header-top">
-                <h1><a href="/producto/index">ZAPATERIA</a></h1>
+                <h1><a href="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/zapateria/producto/index">ZAPATERIA</a></h1>
                 
                 <!-- Buscador -->
                 <div class="buscador">
@@ -29,21 +29,21 @@
                 
                 <nav>
                     <ul>
-                        <li><a href="/producto/index">Productos</a></li>
+                        <li><a href="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/zapateria/producto/index">Productos</a></li>
                         <?php if (isset($_SESSION['usuario_id'])): ?>
-                            <li><a href="/pedido/carrito">Carrito 
+                            <li><a href="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/zapateria/pedido/carrito">Carrito 
                                 <?php if (isset($_SESSION['carrito']) && count($_SESSION['carrito']) > 0): ?>
                                     <span class="carrito-badge"><?php echo array_sum($_SESSION['carrito']); ?></span>
                                 <?php endif; ?>
                             </a></li>
-                            <li><a href="/usuario/perfil">Mi Perfil</a></li>
+                            <li><a href="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/zapateria/usuario/perfil">Mi Perfil</a></li>
                             <?php if ($_SESSION['admin'] == 't'): ?>
-                                <li><a href="/admin/dashboard">Admin</a></li>
+                                <li><a href="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/zapateria/admin/dashboard">Admin</a></li>
                             <?php endif; ?>
-                            <li><a href="/auth/logout">Salir</a></li>
+                            <li><a href="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/zapateria/auth/logout">Salir</a></li>
                         <?php else: ?>
-                            <li><a href="/auth/login">Iniciar Sesión</a></li>
-                            <li><a href="/auth/registro">Registro</a></li>
+                            <li><a href="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/zapateria/auth/login">Iniciar Sesión</a></li>
+                            <li><a href="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/zapateria/auth/registro">Registro</a></li>
                         <?php endif; ?>
                     </ul>
                 </nav>

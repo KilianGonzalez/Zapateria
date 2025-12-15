@@ -1,7 +1,7 @@
     </main>
     <footer>
         <div class="container">
-            <p>&copy; <?php echo date('Y'); ?> Zapatería Online. Todos los derechos reservados.</p>
+            <p>&copy; <?php echo date('Y'); ?> Shoes & CO. Todos los derechos reservados.</p>
         </div>
     </footer>
     <script src="/assets/js/ajax.js"></script>
