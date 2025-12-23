@@ -19,24 +19,22 @@ require_once 'views/layout/header.php';
         <div class="mensaje error">
             Por favor, ingresa al menos 2 caracteres para buscar.
         </div>
-        <a href="/producto/index" class="btn-primary">Ver todos los productos</a>
+        <a href="<?php echo BASE_URL; ?>/producto/index" class="btn-primary">Ver todos los productos</a>
     <?php elseif (empty($productos)): ?>
         <div class="no-productos">
             <p>No se encontraron productos que coincidan con tu búsqueda.</p>
-            <a href="/producto/index" class="btn-primary">Ver todos los productos</a>
+            <a href="<?php echo BASE_URL; ?>/producto/index" class="btn-primary">Ver todos los productos</a>
         </div>
     <?php else: ?>
         <div class="productos-grid">
             <?php foreach ($productos as $producto): ?>
                 <div class="producto-card">
-                    <a href="/producto/detalle/<?php echo $producto['id']; ?>">
+                    <a href="<?php echo BASE_URL; ?>/producto/detalle/<?php echo $producto['id']; ?>">
                         <div class="producto-imagen">
-                            <?php
-                            $imagenPrincipal = $producto['imagenPrincipal'] ?? 'default.jpg';
-                            ?>
-                            <img src="/assets/uploads/productos/<?php echo $imagenPrincipal; ?>" 
+                            <?php $imagenPrincipal = $producto['imagenPrincipal'] ?? 'default.jpg'; ?>
+                            <img src="<?php echo ASSETS_URL; ?>/uploads/productos/<?php echo $imagenPrincipal; ?>" 
                                  alt="<?php echo htmlspecialchars($producto['tipo']); ?>"
-                                 onerror="this.src='/assets/uploads/productos/default.jpg'">
+                                 onerror="this.src='<?php echo ASSETS_URL; ?>/uploads/productos/default.jpg'">
                         </div>
                         <div class="producto-info">
                             <h3><?php echo htmlspecialchars($producto['tipo']); ?></h3>

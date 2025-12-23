@@ -11,25 +11,22 @@ class Pedido {
         try {
             $this->conn->beginTransaction();
             
-            // Insertar pedido
             $query = "INSERT INTO " . $this->table . " 
                       (idCliente, idProducto, direccion, cuentaBancaria, precioTotal) 
                       VALUES (:idCliente, :idProducto, :direccion, :cuentaBancaria, :precioTotal)";
             
             $idPedido = null;
             
-            // Crear un pedido por cada producto (según tu estructura de BD)
             foreach ($productos as $idProducto => $cantidad) {
                 $stmt = $this->conn->prepare($query);
-                $stmt->bindParam(':idCliente', $datos['idCliente']);
-                $stmt->bindParam(':idProducto', $idProducto);
+                $stmt->bindParam(':idCliente', $datos['idCliente'], PDO::PARAM_INT);
+                $stmt->bindParam(':idProducto', $idProducto, PDO::PARAM_INT);
                 $stmt->bindParam(':direccion', $datos['direccion']);
                 $stmt->bindParam(':cuentaBancaria', $datos['cuentaBancaria']);
                 
-                // Calcular precio para este producto
                 $queryPrecio = "SELECT precio FROM Productos WHERE id = :id";
                 $stmtPrecio = $this->conn->prepare($queryPrecio);
-                $stmtPrecio->bindParam(':id', $idProducto);
+                $stmtPrecio->bindParam(':id', $idProducto, PDO::PARAM_INT);
                 $stmtPrecio->execute();
                 $producto = $stmtPrecio->fetch();
                 $precioProducto = $producto['precio'] * $cantidad;
@@ -61,7 +58,7 @@ class Pedido {
                   ORDER BY p.id DESC";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':idCliente', $idCliente);
+        $stmt->bindParam(':idCliente', $idCliente, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }

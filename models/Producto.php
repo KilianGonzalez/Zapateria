@@ -30,7 +30,7 @@ class Producto {
                   WHERE p.id = :id";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetch();
     }
@@ -46,7 +46,7 @@ class Producto {
                   WHERE p.idTipo = :idTipo";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':idTipo', $idTipo);
+        $stmt->bindParam(':idTipo', $idTipo, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }
@@ -93,6 +93,31 @@ class Producto {
         return $stmt->fetchAll();
     }
     
+    public function buscar($termino) {
+        $query = "SELECT p.*, t.nombre as tipo, m.nombre as marca,
+                  (SELECT ip.rutaImagen FROM ImagenesProducto ip 
+                   WHERE ip.idProducto = p.id AND ip.esPrincipal = TRUE 
+                   LIMIT 1) as imagenPrincipal
+                  FROM " . $this->table . " p
+                  LEFT JOIN tipoProductos t ON p.idTipo = t.id
+                  LEFT JOIN Marcas m ON p.idMarca = m.id
+                  WHERE t.nombre LIKE :termino1
+                  OR m.nombre LIKE :termino2
+                  OR p.color LIKE :termino3
+                  OR p.talla LIKE :termino4
+                  ORDER BY p.id DESC
+                  LIMIT 20";
+        
+        $stmt = $this->conn->prepare($query);
+        $terminoBusqueda = '%' . $termino . '%';
+        $stmt->bindParam(':termino1', $terminoBusqueda);
+        $stmt->bindParam(':termino2', $terminoBusqueda);
+        $stmt->bindParam(':termino3', $terminoBusqueda);
+        $stmt->bindParam(':termino4', $terminoBusqueda);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+    
     public function crear($datos) {
         $query = "INSERT INTO " . $this->table . " 
                   (idTipo, color, talla, precio, sexo, idMarca) 
@@ -100,42 +125,43 @@ class Producto {
         
         $stmt = $this->conn->prepare($query);
         
-        $stmt->bindParam(':idTipo', $datos['idTipo']);
+        $stmt->bindParam(':idTipo', $datos['idTipo'], PDO::PARAM_INT);
         $stmt->bindParam(':color', $datos['color']);
         $stmt->bindParam(':talla', $datos['talla']);
         $stmt->bindParam(':precio', $datos['precio']);
         $stmt->bindParam(':sexo', $datos['sexo']);
-        $stmt->bindParam(':idMarca', $datos['idMarca']);
+        $stmt->bindParam(':idMarca', $datos['idMarca'], PDO::PARAM_INT);
         
         if ($stmt->execute()) {
             return $this->conn->lastInsertId();
         }
         return false;
     }
-
-    public function buscar($termino) {
-    $query = "SELECT p.*, t.nombre as tipo, m.nombre as marca,
-              (SELECT ip.rutaImagen FROM ImagenesProducto ip 
-               WHERE ip.idProducto = p.id AND ip.esPrincipal = TRUE 
-               LIMIT 1) as imagenPrincipal
-              FROM " . $this->table . " p
-              LEFT JOIN tipoProductos t ON p.idTipo = t.id
-              LEFT JOIN Marcas m ON p.idMarca = m.id
-              WHERE t.nombre LIKE :termino1
-              OR m.nombre LIKE :termino2
-              OR p.color LIKE :termino3
-              OR p.talla LIKE :termino4
-              ORDER BY p.id DESC
-              LIMIT 20";
     
-    $stmt = $this->conn->prepare($query);
-    $terminoBusqueda = '%' . $termino . '%';
-    $stmt->bindParam(':termino1', $terminoBusqueda);
-    $stmt->bindParam(':termino2', $terminoBusqueda);
-    $stmt->bindParam(':termino3', $terminoBusqueda);
-    $stmt->bindParam(':termino4', $terminoBusqueda);
-    $stmt->execute();
-    return $stmt->fetchAll();
-}
+    public function actualizar($id, $datos) {
+        $query = "UPDATE " . $this->table . " 
+                  SET idTipo = :idTipo, color = :color, talla = :talla, 
+                      precio = :precio, sexo = :sexo, idMarca = :idMarca
+                  WHERE id = :id";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->bindParam(':idTipo', $datos['idTipo'], PDO::PARAM_INT);
+        $stmt->bindParam(':color', $datos['color']);
+        $stmt->bindParam(':talla', $datos['talla']);
+        $stmt->bindParam(':precio', $datos['precio']);
+        $stmt->bindParam(':sexo', $datos['sexo']);
+        $stmt->bindParam(':idMarca', $datos['idMarca'], PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    }
+    
+    public function eliminar($id) {
+        $query = "DELETE FROM " . $this->table . " WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }
 ?>

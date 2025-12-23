@@ -1,27 +1,34 @@
-// Función helper para hacer peticiones AJAX
+// BASE_URL viene definido en footer.php
+// Función helper para peticiones AJAX
 function ajax(url, method, data, callback) {
+    console.log('AJAX request:', method, url, data);
     const xhr = new XMLHttpRequest();
-    xhr.open(method, url, true);
+    const fullUrl = url.startsWith('http') ? url : BASE_URL + url;
+    xhr.open(method, fullUrl, true);
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
+            console.log('AJAX response:', xhr.status, xhr.responseText);
             if (xhr.status === 200) {
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    callback(null, response);
-                } catch (e) {
-                    callback(e, null);
+                if (callback) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        callback(null, response);
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        callback(e, null);
+                    }
                 }
             } else {
-                callback(new Error('Error en la petición: ' + xhr.status), null);
+                if (callback) callback(new Error('Error ' + xhr.status), null);
             }
         }
     };
     
     if (method === 'POST') {
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        const params = new URLSearchParams(data).toString();
+        const params = new URLSearchParams(data || {}).toString();
         xhr.send(params);
     } else {
         xhr.send();
@@ -52,11 +59,13 @@ function filtrarProductos() {
     });
 }
 
-// Mostrar productos en el DOM
+// Mostrar productos en el DOM (para filtros/búsqueda)
 function mostrarProductos(productos) {
     const container = document.getElementById('productosContainer');
     
-    if (productos.length === 0) {
+    if (!container) return;
+    
+    if (!productos || productos.length === 0) {
         container.innerHTML = '<p class="no-productos">No se encontraron productos con esos filtros.</p>';
         return;
     }
@@ -66,11 +75,11 @@ function mostrarProductos(productos) {
         const imagen = producto.imagenPrincipal || 'default.jpg';
         html += `
             <div class="producto-card">
-                <a href="/producto/detalle/${producto.id}">
+                <a href="${BASE_URL}/producto/detalle/${producto.id}">
                     <div class="producto-imagen">
-                        <img src="/assets/uploads/productos/${imagen}" 
+                        <img src="${ASSETS_URL}/uploads/productos/${imagen}" 
                              alt="${producto.tipo}"
-                             onerror="this.src='/assets/uploads/productos/default.jpg'">
+                             onerror="this.src='${ASSETS_URL}/uploads/productos/default.jpg'">
                     </div>
                     <div class="producto-info">
                         <h3>${producto.tipo}</h3>
@@ -88,119 +97,169 @@ function mostrarProductos(productos) {
 
 // Agregar producto al carrito
 function agregarAlCarrito(productoId) {
-    ajax('/pedido/agregarCarrito', 'POST', { idProducto: productoId }, function(error, response) {
+    console.log('agregarAlCarrito llamado con ID:', productoId);
+    
+    ajax('/pedido/agregarCarrito', 'POST', { idProducto: productoId, cantidad: 1 }, function(error, response) {
+        console.log('Respuesta agregar carrito:', error, response);
+        
         if (error) {
+            console.error('Error al agregar al carrito:', error);
             mostrarMensaje('Error al agregar al carrito', 'error');
             return;
         }
         
         if (response.success) {
-            mostrarMensaje('Producto agregado al carrito', 'success');
-            // Actualizar contador de carrito si existe
-            actualizarContadorCarrito(response.totalItems);
+            mostrarMensaje(response.message || 'Producto agregado al carrito', 'success');
+            if (response.totalItems) {
+                actualizarContadorCarrito(response.totalItems);
+            }
         } else {
             mostrarMensaje(response.message || 'Error al agregar al carrito', 'error');
+            if (response.message && response.message.includes('sesión')) {
+                setTimeout(function() {
+                    window.location.href = BASE_URL + '/auth/login';
+                }, 2000);
+            }
         }
     });
 }
 
-// Actualizar contador de items en el carrito
+// Actualizar contador carrito (header)
 function actualizarContadorCarrito(totalItems) {
-    const contador = document.getElementById('carritoContador');
-    if (contador && totalItems > 0) {
-        contador.textContent = totalItems;
-        contador.style.display = 'inline-block';
+    console.log('Actualizando contador carrito:', totalItems);
+    
+    let badge = document.querySelector('.carrito-badge');
+    const carritoLink = document.querySelector('a[href*="/pedido/carrito"]');
+    
+    if (!badge && carritoLink) {
+        badge = document.createElement('span');
+        badge.className = 'carrito-badge';
+        carritoLink.appendChild(badge);
+    }
+    
+    if (badge) {
+        badge.textContent = totalItems;
+        badge.style.display = totalItems > 0 ? 'inline-block' : 'none';
     }
 }
 
-// Mostrar/ocultar loading
+// Loading
 function mostrarLoading(mostrar) {
     const loading = document.getElementById('loading');
-    if (loading) {
-        loading.style.display = mostrar ? 'block' : 'none';
-    }
+    if (loading) loading.style.display = mostrar ? 'block' : 'none';
 }
 
-// Mostrar mensajes al usuario
+// Mensajes flotantes
 function mostrarMensaje(texto, tipo) {
+    console.log('Mostrando mensaje:', texto, tipo);
+    
     const mensaje = document.getElementById('mensaje');
     if (mensaje) {
         mensaje.textContent = texto;
         mensaje.className = 'mensaje ' + tipo;
         mensaje.style.display = 'block';
-        
-        setTimeout(() => {
-            mensaje.style.display = 'none';
-        }, 3000);
+        setTimeout(() => mensaje.style.display = 'none', 3000);
     } else {
-        // Si no existe el elemento mensaje, crear uno temporal
-        const mensajeTemp = document.createElement('div');
-        mensajeTemp.className = 'mensaje ' + tipo;
-        mensajeTemp.textContent = texto;
-        mensajeTemp.style.position = 'fixed';
-        mensajeTemp.style.top = '20px';
-        mensajeTemp.style.right = '20px';
-        mensajeTemp.style.zIndex = '1000';
-        mensajeTemp.style.padding = '1rem';
-        mensajeTemp.style.borderRadius = '5px';
-        mensajeTemp.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+        const msg = document.createElement('div');
+        msg.className = 'mensaje ' + tipo;
+        msg.textContent = texto;
+        msg.style.position = 'fixed';
+        msg.style.top = '20px';
+        msg.style.right = '20px';
+        msg.style.zIndex = '2000';
+        msg.style.padding = '1rem';
+        msg.style.borderRadius = '5px';
+        msg.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
         
-        document.body.appendChild(mensajeTemp);
+        if (tipo === 'success') {
+            msg.style.background = '#d4edda';
+            msg.style.color = '#155724';
+            msg.style.border = '1px solid #c3e6cb';
+        } else {
+            msg.style.background = '#f8d7da';
+            msg.style.color = '#721c24';
+            msg.style.border = '1px solid #f5c6cb';
+        }
         
+        document.body.appendChild(msg);
         setTimeout(() => {
-            document.body.removeChild(mensajeTemp);
+            if (msg.parentNode) {
+                document.body.removeChild(msg);
+            }
         }, 3000);
     }
 }
 
-// Limpiar filtros
-function limpiarFiltros() {
-    document.getElementById('filtroTipo').value = '';
-    document.getElementById('filtroMarca').value = '';
-    document.getElementById('filtroSexo').value = '';
-    document.getElementById('precioMin').value = '';
-    document.getElementById('precioMax').value = '';
+// Buscar productos (autocompletado)
+function buscarProductos(termino) {
+    console.log('buscarProductos llamado con:', termino);
     
-    filtrarProductos();
-}
-
-// Actualizar cantidad en el carrito
-function actualizarCantidadCarrito(idProducto, cantidad) {
-    ajax('/pedido/actualizarCantidad', 'POST', 
-        { idProducto: idProducto, cantidad: cantidad }, 
-        function(error, response) {
-            if (!error && response.success) {
-                // Actualizar subtotal y total en la interfaz
-                const row = document.querySelector(`tr[data-producto-id="${idProducto}"]`);
-                if (row) {
-                    row.querySelector('.subtotal').textContent = response.subtotal + ' €';
-                }
-                const totalElement = document.querySelector('.total strong');
-                if (totalElement) {
-                    totalElement.textContent = response.total + ' €';
-                }
-            } else {
-                mostrarMensaje('Error al actualizar la cantidad', 'error');
-            }
-        }
-    );
-}
-
-// Eliminar producto del carrito
-function eliminarDelCarrito(idProducto) {
-    if (!confirm('¿Estás seguro de eliminar este producto del carrito?')) {
+    if (termino.length < 2) {
+        const resultadosDiv = document.getElementById('resultadosBusqueda');
+        if (resultadosDiv) resultadosDiv.style.display = 'none';
         return;
     }
     
-    ajax('/pedido/eliminarDelCarrito', 'POST', 
-        { idProducto: idProducto }, 
-        function(error, response) {
-            if (!error && response.success) {
-                // Recargar la página para actualizar el carrito
-                location.reload();
-            } else {
-                mostrarMensaje('Error al eliminar el producto', 'error');
-            }
+    ajax('/producto/buscar', 'POST', { termino: termino }, function(error, productos) {
+        console.log('Resultados búsqueda:', error, productos);
+        if (error) {
+            console.error('Error al buscar productos:', error);
+            return;
         }
-    );
+        mostrarResultadosBusqueda(productos);
+    });
 }
+
+// Mostrar resultados de búsqueda en el dropdown
+function mostrarResultadosBusqueda(productos) {
+    const resultadosDiv = document.getElementById('resultadosBusqueda');
+    const input = document.getElementById('busqueda');
+    
+    if (!resultadosDiv || !input) {
+        console.error('No se encontró resultadosDiv o input');
+        return;
+    }
+    
+    if (!productos || productos.length === 0) {
+        resultadosDiv.innerHTML = '<div class="resultado-item no-resultados">No se encontraron productos</div>';
+        resultadosDiv.style.display = 'block';
+        return;
+    }
+    
+    let html = '';
+    productos.slice(0, 5).forEach(producto => {
+        const imagen = producto.imagenPrincipal || 'default.jpg';
+        html += `
+            <a href="${BASE_URL}/producto/detalle/${producto.id}" class="resultado-item">
+                <img src="${ASSETS_URL}/uploads/productos/${imagen}" 
+                     alt="${producto.tipo}"
+                     onerror="this.src='${ASSETS_URL}/uploads/productos/default.jpg'">
+                <div class="resultado-info">
+                    <strong>${producto.tipo}</strong>
+                    <span>${producto.marca} - ${producto.color}</span>
+                    <span class="precio">${parseFloat(producto.precio).toFixed(2)} €</span>
+                </div>
+            </a>
+        `;
+    });
+    
+    if (productos.length > 5) {
+        html += `<a href="${BASE_URL}/producto/resultados?q=${encodeURIComponent(input.value)}" class="ver-todos">
+                    Ver todos los resultados (${productos.length})
+                 </a>`;
+    }
+    
+    resultadosDiv.innerHTML = html;
+    resultadosDiv.style.display = 'block';
+    console.log('Resultados mostrados');
+}
+
+// Cerrar resultados de búsqueda al hacer clic fuera
+document.addEventListener('click', function(e) {
+    const resultadosDiv = document.getElementById('resultadosBusqueda');
+    const buscador = document.querySelector('.buscador');
+    
+    if (resultadosDiv && buscador && !buscador.contains(e.target)) {
+        resultadosDiv.style.display = 'none';
+    }
+});

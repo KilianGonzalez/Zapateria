@@ -1,10 +1,15 @@
     </main>
     <footer>
         <div class="container">
-            <p>&copy; <?php echo date('Y'); ?> Shoes & CO. Todos los derechos reservados.</p>
+            <p>&copy; <?php echo date('Y'); ?> Zapatería Online. Todos los derechos reservados.</p>
         </div>
     </footer>
-    <script src="/assets/js/ajax.js"></script>
-    <script src="/assets/js/main.js"></script>
+    <script>
+        const BASE_URL = '<?php echo BASE_URL; ?>';
+        const ASSETS_URL = '<?php echo ASSETS_URL; ?>';
+    </script>
+    <script src="<?php echo ASSETS_URL; ?>/js/ajax.js"></script>
+    <script src="<?php echo ASSETS_URL; ?>/js/validaciones.js"></script>
+    <script src="<?php echo ASSETS_URL; ?>/js/main.js"></script>
 </body>
 </html>

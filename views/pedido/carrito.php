@@ -9,7 +9,7 @@ require_once 'views/layout/header.php';
     <?php if (empty($productos)): ?>
         <div class="carrito-vacio">
             <p>Tu carrito está vacío</p>
-            <a href="/producto/index" class="btn-primary">Ver Productos</a>
+            <a href="<?php echo BASE_URL; ?>/producto/index" class="btn-primary">Ver Productos</a>
         </div>
     <?php else: ?>
         <div class="carrito-contenido">
@@ -28,9 +28,9 @@ require_once 'views/layout/header.php';
                         <tr data-producto-id="<?php echo $producto['id']; ?>">
                             <td>
                                 <div class="producto-carrito">
-                                    <img src="/assets/uploads/productos/producto_<?php echo $producto['id']; ?>_1.jpg" 
+                                    <img src="<?php echo ASSETS_URL; ?>/uploads/productos/<?php echo $producto['imagenPrincipal'] ?? 'default.jpg'; ?>" 
                                          alt="<?php echo htmlspecialchars($producto['tipo']); ?>"
-                                         onerror="this.src='/assets/uploads/productos/default.jpg'">
+                                         onerror="this.src='<?php echo ASSETS_URL; ?>/uploads/productos/default.jpg'">
                                     <div>
                                         <strong><?php echo htmlspecialchars($producto['tipo']); ?></strong>
                                         <p><?php echo htmlspecialchars($producto['marca']); ?></p>
@@ -65,15 +65,14 @@ require_once 'views/layout/header.php';
             </table>
             
             <div class="carrito-acciones">
-                <a href="/producto/index" class="btn-secondary">Seguir Comprando</a>
-                <a href="/pedido/checkout" class="btn-primary">Finalizar Compra</a>
+                <a href="<?php echo BASE_URL; ?>/producto/index" class="btn-secondary">Seguir Comprando</a>
+                <a href="<?php echo BASE_URL; ?>/pedido/checkout" class="btn-primary">Finalizar Compra</a>
             </div>
         </div>
     <?php endif; ?>
 </div>
 
 <script>
-// Actualizar cantidad
 document.querySelectorAll('.cantidad-input').forEach(input => {
     input.addEventListener('change', function() {
         const idProducto = this.getAttribute('data-producto-id');
@@ -83,7 +82,6 @@ document.querySelectorAll('.cantidad-input').forEach(input => {
             { idProducto: idProducto, cantidad: cantidad }, 
             function(error, response) {
                 if (!error && response.success) {
-                    // Actualizar subtotal y total
                     const row = document.querySelector(`tr[data-producto-id="${idProducto}"]`);
                     row.querySelector('.subtotal').textContent = response.subtotal + ' €';
                     document.querySelector('.total strong').textContent = response.total + ' €';
@@ -93,7 +91,6 @@ document.querySelectorAll('.cantidad-input').forEach(input => {
     });
 });
 
-// Eliminar producto
 document.querySelectorAll('.btn-eliminar').forEach(btn => {
     btn.addEventListener('click', function() {
         if (confirm('¿Estás seguro de eliminar este producto?')) {

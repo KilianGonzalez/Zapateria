@@ -1,44 +1,65 @@
 <?php
 session_start();
+require_once 'config.php';
 
 // Obtener la URL solicitada
-$url = isset($_GET['url']) ? $_GET['url'] : 'producto/index';
-$url = rtrim($url, '/');
-$url = explode('/', $url);
+$request = $_SERVER['REQUEST_URI'];
+$request = str_replace(dirname($_SERVER['SCRIPT_NAME']), '', $request);
+$request = rtrim($request, '/');
+$request = strtok($request, '?');
 
-// Determinar controlador, método y parámetros
-$controllerName = ucfirst($url[0]) . 'Controller';
-$method = isset($url[1]) ? $url[1] : 'index';
-$params = array_slice($url, 2);
+// Si está vacío, redirigir a /producto/index
+if (empty($request)) {
+    $request = '/producto/index';
+}
 
-// Ruta del controlador
-$controllerFile = 'controllers/' . $controllerName . '.php';
+// Parsear la ruta
+$parts = explode('/', trim($request, '/'));
+$controller = $parts[0] ?? 'producto';
+$action = $parts[1] ?? 'index';
+$param = $parts[2] ?? null;
 
-// Verificar que existe el controlador
+// Mapeo de controladores
+$controllerMap = [
+    'producto' => 'ProductoController',
+    'auth' => 'AuthController',
+    'usuario' => 'UsuarioController',
+    'pedido' => 'PedidoController',
+    'admin' => 'AdminController',
+    'password' => 'PasswordController'
+];
+
+// Verificar si el controlador existe
+if (!isset($controllerMap[$controller])) {
+    http_response_code(404);
+    echo "Controlador no encontrado: {$controller}";
+    exit;
+}
+
+$controllerClass = $controllerMap[$controller];
+$controllerFile = "controllers/{$controllerClass}.php";
+
+// Cargar el controlador
 if (file_exists($controllerFile)) {
-    // Cargar Database primero
-    require_once 'controllers/Database.php';
-    
-    // Cargar el controlador
     require_once $controllerFile;
+    $controllerInstance = new $controllerClass();
     
-    // Verificar que la clase existe
-    if (class_exists($controllerName)) {
-        $controller = new $controllerName();
-        
-        // Verificar que existe el método
-        if (method_exists($controller, $method)) {
-            call_user_func_array([$controller, $method], $params);
+    // Verificar si el método existe
+    if (method_exists($controllerInstance, $action)) {
+        // Llamar al método con parámetro si existe
+        if ($param !== null) {
+            $controllerInstance->$action($param);
         } else {
-            http_response_code(404);
-            die("Método no encontrado: " . $method);
+            $controllerInstance->$action();
         }
     } else {
         http_response_code(404);
-        die("Clase no encontrada: " . $controllerName);
+        echo "Acción no encontrada: {$action}";
+        exit;
     }
 } else {
     http_response_code(404);
-    die("Controlador no encontrado: " . $controllerName . " (Buscando en: " . $controllerFile . ")");
+    echo "Archivo del controlador no encontrado: {$controllerFile}";
+    exit;
 }
 ?>

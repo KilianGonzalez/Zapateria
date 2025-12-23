@@ -2,6 +2,7 @@
 require_once 'controllers/Database.php';
 require_once 'models/Pedido.php';
 require_once 'models/Producto.php';
+require_once 'models/ImagenProducto.php';
 
 class PedidoController {
     private $db;
@@ -13,10 +14,9 @@ class PedidoController {
         $this->pedidoModel = new Pedido($this->db);
     }
     
-    // Ver carrito
     public function carrito() {
         if (!isset($_SESSION['usuario_id'])) {
-            header('Location: /auth/login');
+            header('Location: ' . BASE_URL . '/auth/login');
             exit;
         }
         
@@ -26,9 +26,29 @@ class PedidoController {
         
         if (!empty($carrito)) {
             $productoModel = new Producto($this->db);
+            $imagenModel = new ImagenProducto($this->db);
+            
             foreach ($carrito as $idProducto => $cantidad) {
                 $producto = $productoModel->obtenerPorId($idProducto);
                 if ($producto) {
+                    // Obtener imagen principal
+                    $imagenes = $imagenModel->obtenerPorProducto($idProducto);
+                    $imagenPrincipal = 'default.jpg';
+                    
+                    if (!empty($imagenes)) {
+                        foreach ($imagenes as $img) {
+                            if ($img['esPrincipal']) {
+                                $imagenPrincipal = $img['rutaImagen'];
+                                break;
+                            }
+                        }
+                        // Si no hay principal, usar la primera
+                        if ($imagenPrincipal == 'default.jpg' && isset($imagenes[0])) {
+                            $imagenPrincipal = $imagenes[0]['rutaImagen'];
+                        }
+                    }
+                    
+                    $producto['imagenPrincipal'] = $imagenPrincipal;
                     $producto['cantidad'] = $cantidad;
                     $producto['subtotal'] = $producto['precio'] * $cantidad;
                     $productos[] = $producto;
@@ -56,12 +76,10 @@ class PedidoController {
                 exit;
             }
             
-            // Inicializar carrito si no existe
             if (!isset($_SESSION['carrito'])) {
                 $_SESSION['carrito'] = [];
             }
             
-            // Agregar o incrementar cantidad
             if (isset($_SESSION['carrito'][$idProducto])) {
                 $_SESSION['carrito'][$idProducto] += $cantidad;
             } else {
@@ -80,7 +98,7 @@ class PedidoController {
         }
     }
     
-    // AJAX: Actualizar cantidad en carrito
+    // AJAX: Actualizar cantidad
     public function actualizarCantidad() {
         if ($this->isAjax()) {
             $idProducto = $_POST['idProducto'] ?? null;
@@ -97,7 +115,6 @@ class PedidoController {
                 $_SESSION['carrito'][$idProducto] = $cantidad;
             }
             
-            // Calcular nuevo total
             $productoModel = new Producto($this->db);
             $producto = $productoModel->obtenerPorId($idProducto);
             $subtotal = $producto['precio'] * $cantidad;
@@ -136,38 +153,48 @@ class PedidoController {
         }
     }
     
-    // Finalizar compra
     public function checkout() {
         if (!isset($_SESSION['usuario_id'])) {
-            header('Location: /auth/login');
+            header('Location: ' . BASE_URL . '/auth/login');
             exit;
         }
         
         if (empty($_SESSION['carrito'])) {
-            header('Location: /pedido/carrito');
+            header('Location: ' . BASE_URL . '/pedido/carrito');
             exit;
         }
         
         require_once 'views/pedido/checkout.php';
     }
     
-    // Procesar pedido
     public function procesar() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /pedido/carrito');
+            header('Location: ' . BASE_URL . '/pedido/carrito');
             exit;
         }
         
         if (!isset($_SESSION['usuario_id']) || empty($_SESSION['carrito'])) {
-            header('Location: /pedido/carrito');
+            header('Location: ' . BASE_URL . '/pedido/carrito');
             exit;
         }
         
         $idCliente = $_SESSION['usuario_id'];
-        $direccion = $_POST['direccion'] ?? '';
-        $cuentaBancaria = $_POST['cuentaBancaria'] ?? '';
+        $direccion = trim($_POST['direccion'] ?? '');
+        $cuentaBancaria = trim($_POST['cuentaBancaria'] ?? '');
         
-        // Calcular precio total
+        // Validación servidor
+        if (empty($direccion) || empty($cuentaBancaria)) {
+            $_SESSION['error'] = 'Todos los campos son obligatorios';
+            header('Location: ' . BASE_URL . '/pedido/checkout');
+            exit;
+        }
+        
+        if (!preg_match('/^ES\d{22}$/', $cuentaBancaria)) {
+            $_SESSION['error'] = 'Formato de cuenta bancaria no válido (debe ser ES seguido de 22 dígitos)';
+            header('Location: ' . BASE_URL . '/pedido/checkout');
+            exit;
+        }
+        
         $productoModel = new Producto($this->db);
         $precioTotal = 0;
         
@@ -176,7 +203,6 @@ class PedidoController {
             $precioTotal += $producto['precio'] * $cantidad;
         }
         
-        // Crear pedido
         $datosPedido = [
             'idCliente' => $idCliente,
             'direccion' => $direccion,
@@ -187,15 +213,13 @@ class PedidoController {
         $idPedido = $this->pedidoModel->crear($datosPedido, $_SESSION['carrito']);
         
         if ($idPedido) {
-            // Limpiar carrito
             unset($_SESSION['carrito']);
-            
             $_SESSION['mensaje'] = 'Pedido realizado correctamente';
-            header('Location: /usuario/perfil');
+            header('Location: ' . BASE_URL . '/usuario/perfil');
             exit;
         } else {
             $_SESSION['error'] = 'Error al procesar el pedido';
-            header('Location: /pedido/checkout');
+            header('Location: ' . BASE_URL . '/pedido/checkout');
             exit;
         }
     }

@@ -7,10 +7,13 @@ require_once 'views/layout/header.php';
     <div class="galeria-imagenes">
         <div class="imagen-principal">
             <?php if (!empty($imagenes)): ?>
-                <img id="imagenPrincipal" src="/assets/uploads/productos/<?php echo $imagenes[0]['rutaImagen']; ?>" 
+                <img id="imagenPrincipal" 
+                     src="<?php echo ASSETS_URL; ?>/uploads/productos/<?php echo $imagenes[0]['rutaImagen']; ?>" 
                      alt="<?php echo htmlspecialchars($producto['tipo']); ?>">
             <?php else: ?>
-                <img id="imagenPrincipal" src="/assets/uploads/productos/default.jpg" alt="Sin imagen">
+                <img id="imagenPrincipal" 
+                     src="<?php echo ASSETS_URL; ?>/uploads/productos/default.jpg" 
+                     alt="Sin imagen">
             <?php endif; ?>
         </div>
         
@@ -18,7 +21,7 @@ require_once 'views/layout/header.php';
             <?php if (!empty($imagenes)): ?>
                 <?php foreach ($imagenes as $index => $imagen): ?>
                     <img class="miniatura <?php echo $index === 0 ? 'active' : ''; ?>" 
-                         src="/assets/uploads/productos/<?php echo $imagen['rutaImagen']; ?>" 
+                         src="<?php echo ASSETS_URL; ?>/uploads/productos/<?php echo $imagen['rutaImagen']; ?>" 
                          alt="Imagen <?php echo $index + 1; ?>"
                          onclick="cambiarImagen('<?php echo $imagen['rutaImagen']; ?>', this)">
                 <?php endforeach; ?>
@@ -44,10 +47,14 @@ require_once 'views/layout/header.php';
         <p class="precio-detalle"><?php echo number_format($producto['precio'], 2); ?> €</p>
         
         <div class="acciones">
-            <button id="btnAgregarCarrito" class="btn-primary" data-producto-id="<?php echo $producto['id']; ?>">
-                Agregar al Carrito
-            </button>
-            <a href="/producto/index" class="btn-secondary">Volver a Productos</a>
+            <?php if (isset($_SESSION['usuario_id'])): ?>
+                <button id="btnAgregarCarrito" class="btn-primary" data-producto-id="<?php echo $producto['id']; ?>">
+                    Agregar al Carrito
+                </button>
+            <?php else: ?>
+                <a href="<?php echo BASE_URL; ?>/auth/login" class="btn-primary">Inicia sesión para comprar</a>
+            <?php endif; ?>
+            <a href="<?php echo BASE_URL; ?>/producto/index" class="btn-secondary">Volver a Productos</a>
         </div>
         
         <div id="mensaje" class="mensaje" style="display: none;"></div>
@@ -56,12 +63,9 @@ require_once 'views/layout/header.php';
 
 <script>
 function cambiarImagen(rutaImagen, elemento) {
-    document.getElementById('imagenPrincipal').src = '/assets/uploads/productos/' + rutaImagen;
+    document.getElementById('imagenPrincipal').src = '<?php echo ASSETS_URL; ?>/uploads/productos/' + rutaImagen;
     
-    // Remover clase active de todas las miniaturas
     document.querySelectorAll('.miniatura').forEach(img => img.classList.remove('active'));
-    
-    // Agregar clase active a la miniatura clickeada
     elemento.classList.add('active');
 }
 </script>

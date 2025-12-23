@@ -47,20 +47,12 @@ require_once 'views/layout/header.php';
             <?php if (!empty($productos)): ?>
                 <?php foreach ($productos as $producto): ?>
                     <div class="producto-card">
-                        <a href="/producto/detalle/<?php echo $producto['id']; ?>">
+                        <a href="<?php echo BASE_URL; ?>/producto/detalle/<?php echo $producto['id']; ?>">
                             <div class="producto-imagen">
-                                <?php
-                                // Obtener la imagen principal del producto
-                                require_once 'models/ImagenProducto.php';
-                                $database = new Database();
-                                $db = $database->getConnection();
-                                $imagenModel = new ImagenProducto($db);
-                                $imagenes = $imagenModel->obtenerPorProducto($producto['id']);
-                                $imagenPrincipal = !empty($imagenes) ? $imagenes[0]['rutaImagen'] : 'default.jpg';
-                                ?>
-                                <img src="/assets/uploads/productos/<?php echo $imagenPrincipal; ?>" 
+                                <?php $imagen = $producto['imagenPrincipal'] ?? 'default.jpg'; ?>
+                                <img src="<?php echo ASSETS_URL; ?>/uploads/productos/<?php echo $imagen; ?>" 
                                      alt="<?php echo htmlspecialchars($producto['tipo']); ?>"
-                                     onerror="this.src='/assets/uploads/productos/default.jpg'">
+                                     onerror="this.src='<?php echo ASSETS_URL; ?>/uploads/productos/default.jpg'">
                             </div>
                             <div class="producto-info">
                                 <h3><?php echo htmlspecialchars($producto['tipo']); ?></h3>

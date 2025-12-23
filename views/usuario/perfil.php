@@ -27,7 +27,7 @@ require_once 'views/layout/header.php';
         
         <?php if (empty($pedidos)): ?>
             <p>No has realizado ningún pedido todavía.</p>
-            <a href="/producto/index" class="btn-primary">Ver Productos</a>
+            <a href="<?php echo BASE_URL; ?>/producto/index" class="btn-primary">Ver Productos</a>
         <?php else: ?>
             <table class="pedidos-tabla">
                 <thead>

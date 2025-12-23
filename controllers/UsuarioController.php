@@ -15,7 +15,7 @@ class UsuarioController {
     
     public function perfil() {
         if (!isset($_SESSION['usuario_id'])) {
-            header('Location: /auth/login');
+            header('Location: ' . BASE_URL . '/auth/login');
             exit;
         }
         
